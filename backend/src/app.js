@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 require('dotenv').config();
 
 const errorHandler = require('./middleware/errorHandler');
@@ -11,7 +10,7 @@ const studentRoutes = require('./routes/studentRoutes');
 const alumniRoutes = require('./routes/alumniRoutes');
 const advisorRoutes = require('./routes/advisorRoutes');
 const projectRoutes = require('./routes/projectRoutes');
-const uploadRoutes = require('./routes/uploadRoutes');
+const importRoutes = require('./routes/importRoutes');
 
 const app = express();
 
@@ -24,9 +23,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // =============================================
 // Routes
@@ -42,7 +38,6 @@ app.get('/api', (req, res) => {
       alumni: '/api/alumni',
       advisors: '/api/advisors',
       projects: '/api/projects',
-      upload: '/api/upload',
     },
   });
 });
@@ -52,7 +47,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/alumni', alumniRoutes);
 app.use('/api/advisors', advisorRoutes);
 app.use('/api/projects', projectRoutes);
-app.use('/api/upload', uploadRoutes);
+app.use('/api/import', importRoutes);
 
 // 404 Handler
 app.use((req, res) => {

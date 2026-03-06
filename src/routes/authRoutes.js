@@ -1,7 +1,7 @@
 const express = require('express');
-const { body } = require('express-validator');
 const AuthController = require('../controllers/authController');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
+const { loginValidator, registerValidator, handleValidationErrors } = require('../middleware/validators');
 
 const router = express.Router();
 
@@ -10,21 +10,16 @@ router.post(
   '/register',
   authenticateToken,
   authorizeRoles('admin'),
-  [
-    body('username').notEmpty().withMessage('กรุณาระบุ username'),
-    body('password').isLength({ min: 6 }).withMessage('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'),
-    body('role').isIn(['student', 'advisor', 'admin']).withMessage('บทบาทไม่ถูกต้อง'),
-  ],
+  registerValidator,
+  handleValidationErrors,
   AuthController.register
 );
 
 // POST /api/auth/login - เข้าสู่ระบบ
 router.post(
   '/login',
-  [
-    body('username').notEmpty().withMessage('กรุณาระบุ username'),
-    body('password').notEmpty().withMessage('กรุณาระบุรหัสผ่าน'),
-  ],
+  loginValidator,
+  handleValidationErrors,
   AuthController.login
 );
 
@@ -36,8 +31,18 @@ router.put(
   '/change-password',
   authenticateToken,
   [
-    body('currentPassword').notEmpty().withMessage('กรุณาระบุรหัสผ่านปัจจุบัน'),
-    body('newPassword').isLength({ min: 6 }).withMessage('รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร'),
+    (req, res, next) => {
+      // Custom validation for change-password
+      const errors = [];
+      if (!req.body.currentPassword) errors.push({ field: 'currentPassword', message: 'กรุณาระบุรหัสผ่านปัจจุบัน' });
+      if (!req.body.newPassword) errors.push({ field: 'newPassword', message: 'กรุณาระบุรหัสผ่านใหม่' });
+      if (req.body.newPassword && req.body.newPassword.length < 4) errors.push({ field: 'newPassword', message: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 4 ตัวอักษร' });
+      
+      if (errors.length > 0) {
+        return res.status(400).json({ success: false, message: 'ข้อมูลไม่ถูกต้อง', errors });
+      }
+      next();
+    },
   ],
   AuthController.changePassword
 );
